@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ESP32 Voting Machine - Complete Workflow</title>
+  <style>
+    :root {
+      --primary: #1a73e8;
+      --primary-dark: #0d47a1;
+      --success: #0f9d58;
+      --warning: #f4b400;
+      --danger: #db4437;
+      --bg: #f8f9fa;
+      --card: #ffffff;
+      --text: #202124;
+      --text-light: #5f6368;
+      --border: #dadce0;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      padding: 40px 30px;
+      border-radius: 16px;
+      text-align: center;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 30px rgba(26, 115, 232, 0.25);
+    }
+
+    header h1 {
+      font-size: 2.2rem;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    header p {
+      font-size: 1.1rem;
+      opacity: 0.95;
+    }
+
+    .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      margin-top: 12px;
+    }
+
+    section {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 28px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid var(--border);
+    }
+
+    h2 {
+      color: var(--primary-dark);
+      font-size: 1.45rem;
+      margin-bottom: 18px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e8f0fe;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h2 .num {
+      background: var(--primary);
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    h3 {
+      color: var(--text);
+      font-size: 1.15rem;
+      margin: 20px 0 12px;
+    }
+
+    p {
+      margin-bottom: 12px;
+      color: var(--text-light);
+    }
+
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      align-items: center;
+      margin: 25px 0;
+    }
+
+    .flow-box {
+      background: #e8f0fe;
+      border: 2px solid var(--primary);
+      color: var(--primary-dark);
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      min-width: 140px;
+      text-align: center;
+    }
+
+    .flow-arrow {
+      font-size: 1.5rem;
+      color: var(--primary);
+      font-weight: bold;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+      font-size: 0.95rem;
+    }
+
+    th {
+      background: var(--primary);
+      color: white;
+      padding: 12px 15px;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    td {
+      padding: 11px 15px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    tr:nth-child(even) {
+      background: #f8f9fa;
+    }
+
+    tr:hover {
+      background: #e8f0fe;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 15px;
+    }
+
+    .feature-card {
+      background: #f8f9fa;
+      border-left: 4px solid var(--primary);
+      padding: 16px;
+      border-radius: 0 10px 10px 0;
+    }
+
+    .feature-card h4 {
+      color: var(--primary-dark);
+      margin-bottom: 6px;
+      font-size: 1rem;
+    }
+
+    .feature-card p {
+      font-size: 0.9rem;
+      margin: 0;
+    }
+
+    .pin-table td:first-child {
+      font-weight: 600;
+      color: var(--primary-dark);
+    }
+
+    .note {
+      background: #fff8e1;
+      border-left: 4px solid var(--warning);
+      padding: 14px 18px;
+      border-radius: 0 8px 8px 0;
+      margin: 18px 0;
+      font-size: 0.95rem;
+    }
+
+    .success-box {
+      background: #e6f4ea;
+      border-left: 4px solid var(--success);
+      padding: 14px 18px;
+      border-radius: 0 8px 8px 0;
+      margin: 18px 0;
+    }
+
+    footer {
+      text-align: center;
+      padding: 25px;
+      color: var(--text-light);
+      font-size: 0.9rem;
+    }
+
+    .state {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .state-welcome { background: #e8f0fe; color: #1967d2; }
+    .state-setup   { background: #fef7e0; color: #b06000; }
+    .state-voting  { background: #e6f4ea; color: #137333; }
+    .state-result  { background: #fce8e6; color: #c5221f; }
+
+    @media (max-width: 600px) {
+      header h1 { font-size: 1.6rem; }
+      .flow { flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- Header -->
+    <header>
+      <h1>ESP32 Voting Machine</h1>
+      <p>Complete System Workflow & Documentation</p>
+      <div class="badge">BRAC University • EEE/ECE 302/301LL</div>
+    </header>
+
+    <!-- Overview -->
+    <section>
+      <h2><span class="num">1</span> Project Overview</h2>
+      <p>
+        This is a microcontroller-based electronic voting system built with <strong>ESP32</strong> and <strong>OLED display</strong>.
+        It supports secret ballot voting for 3 candidates, configurable maximum voters, countdown timer,
+        majority winner detection, and a clean user interface.
+      </p>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h4>Secret Voting</h4>
+          <p>Live candidate results are hidden during voting. Only total votes are shown.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Configurable</h4>
+          <p>Set Max Voters (1-50) and Voting Time (10-300s) before starting.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Majority Detection</h4>
+          <p>Automatically checks if the winner has more than 50% of total votes.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Dual Closing</h4>
+          <p>Voting closes when timer ends or maximum voter limit is reached.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Workflow -->
+    <section>
+      <h2><span class="num">2</span> Complete Workflow</h2>
+
+      <div class="flow">
+        <div class="flow-box">Power On</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">Welcome Page</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">Setup Mode</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">Voting Mode</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">Result Screen</div>
+      </div>
+
+      <div class="note">
+        <strong>Note:</strong> Pressing <strong>RESET</strong> at any time during Voting or Result returns the system to Setup Mode.
+      </div>
+    </section>
+
+    <!-- State 1: Welcome -->
+    <section>
+      <h2><span class="num">3</span> State: Welcome Page <span class="state state-welcome">STATE_WELCOME</span></h2>
+      <p>Shown immediately after power-on or reset.</p>
+      <ul style="margin: 12px 0 12px 20px; color: var(--text-light);">
+        <li>Displays project title and university name</li>
+        <li>Automatically moves to Setup Mode after <strong>2.5 seconds</strong></li>
+        <li>Or moves immediately if <strong>any button</strong> is pressed</li>
+      </ul>
+    </section>
+
+    <!-- State 2: Setup -->
+    <section>
+      <h2><span class="num">4</span> State: Setup Mode <span class="state state-setup">STATE_SETUP</span></h2>
+      <p>User configures the election parameters before voting starts.</p>
+
+      <h3>Configurable Parameters</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Range</th>
+            <th>Default</th>
+            <th>Step</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Max Voters</td>
+            <td>1 – 50</td>
+            <td>10</td>
+            <td>±1</td>
+          </tr>
+          <tr>
+            <td>Voting Time</td>
+            <td>10 – 300 seconds</td>
+            <td>60 seconds</td>
+            <td>±5 seconds</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Button Controls in Setup</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Button</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>C1</strong></td>
+            <td>Decrease the currently selected value</td>
+          </tr>
+          <tr>
+            <td><strong>C2</strong></td>
+            <td>Switch between Max Voters ↔ Voting Time</td>
+          </tr>
+          <tr>
+            <td><strong>C3</strong></td>
+            <td>Increase the currently selected value</td>
+          </tr>
+          <tr>
+            <td><strong>RESULT</strong></td>
+            <td>Confirm settings and <strong>Start Voting</strong></td>
+          </tr>
+          <tr>
+            <td><strong>RESET</strong></td>
+            <td>Load default values (10 voters, 60 seconds)</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- State 3: Voting -->
+    <section>
+      <h2><span class="num">5</span> State: Voting Mode <span class="state state-voting">STATE_VOTING</span></h2>
+      <p>Secret ballot style – individual candidate votes are <strong>not shown</strong> live.</p>
+
+      <h3>What is shown on screen</h3>
+      <ul style="margin: 12px 0 12px 20px; color: var(--text-light);">
+        <li>Large remaining time countdown</li>
+        <li>Total votes cast so far (e.g. Votes Cast: 4/10)</li>
+        <li>Status: OPEN or CLOSED</li>
+      </ul>
+
+      <h3>Button Controls during Voting</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Button</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>C1</strong></td>
+            <td>Cast vote for Candidate 1</td>
+          </tr>
+          <tr>
+            <td><strong>C2</strong></td>
+            <td>Cast vote for Candidate 2</td>
+          </tr>
+          <tr>
+            <td><strong>C3</strong></td>
+            <td>Cast vote for Candidate 3</td>
+          </tr>
+          <tr>
+            <td><strong>RESULT</strong></td>
+            <td>Show final election Result</td>
+          </tr>
+          <tr>
+            <td><strong>RESET</strong></td>
+            <td>Return to Setup Mode (clears all votes)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="success-box">
+        <strong>Voting automatically closes when:</strong><br>
+        • Countdown timer reaches 0 <strong>OR</strong><br>
+        • Maximum number of voters is reached
+      </div>
+
+      <p style="margin-top: 15px;">After every successful vote, a “Thank You” confirmation screen is shown briefly.</p>
+    </section>
+
+    <!-- State 4: Result -->
+    <section>
+      <h2><span class="num">6</span> State: Result Screen <span class="state state-result">STATE_RESULT</span></h2>
+      <p>Displayed when the user presses the <strong>RESULT</strong> button.</p>
+
+      <h3>Possible Outcomes</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Situation</th>
+            <th>Display</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>No votes cast</td>
+            <td>“NO VOTES – Yet recorded”</td>
+          </tr>
+          <tr>
+            <td>Two or more candidates have equal highest votes</td>
+            <td>“TIE!” + vote list of all candidates</td>
+          </tr>
+          <tr>
+            <td>Clear winner with &gt; 50% votes</td>
+            <td><strong>MAJORITY WINNER</strong> + big candidate number + all votes</td>
+          </tr>
+          <tr>
+            <td>Highest votes but ≤ 50%</td>
+            <td><strong>WINNER (No Majority)</strong> + big candidate number + all votes</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Hardware -->
+    <section>
+      <h2><span class="num">7</span> Hardware & Pin Configuration</h2>
+
+      <table class="pin-table">
+        <thead>
+          <tr>
+            <th>Component</th>
+            <th>ESP32 GPIO</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>OLED SDA</td>
+            <td>21</td>
+            <td>I2C Data</td>
+          </tr>
+          <tr>
+            <td>OLED SCL</td>
+            <td>22</td>
+            <td>I2C Clock</td>
+          </tr>
+          <tr>
+            <td>Candidate 1 Button</td>
+            <td>15</td>
+            <td>INPUT_PULLUP</td>
+          </tr>
+          <tr>
+            <td>Candidate 2 Button</td>
+            <td>2</td>
+            <td>INPUT_PULLUP</td>
+          </tr>
+          <tr>
+            <td>Candidate 3 Button</td>
+            <td>4</td>
+            <td>INPUT_PULLUP</td>
+          </tr>
+          <tr>
+            <td>Result Button</td>
+            <td>16</td>
+            <td>INPUT_PULLUP</td>
+          </tr>
+          <tr>
+            <td>Reset Button</td>
+            <td>17</td>
+            <td>INPUT_PULLUP</td>
+          </tr>
+          <tr>
+            <td>Buzzer</td>
+            <td>25</td>
+            <td>Optional</td>
+          </tr>
+          <tr>
+            <td>Status LED</td>
+            <td>5</td>
+            <td>Optional</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Software Stack -->
+    <section>
+      <h2><span class="num">8</span> Software Stack</h2>
+      <ul style="margin: 12px 0 12px 20px; color: var(--text-light);">
+        <li><strong>Platform</strong>: PlatformIO</li>
+        <li><strong>Framework</strong>: Arduino</li>
+        <li><strong>Board</strong>: ESP32 Dev Module</li>
+        <li><strong>Libraries</strong>: Adafruit GFX + Adafruit SSD1306</li>
+        <li><strong>Display</strong>: 128×64 OLED (SSD1306) via I2C</li>
+      </ul>
+    </section>
+
+    <!-- Summary Flow -->
+    <section>
+      <h2><span class="num">9</span> Quick Reference Flow</h2>
+      <pre style="background:#f1f3f4; padding:20px; border-radius:10px; overflow-x:auto; font-size:0.9rem; line-height:1.7;">
+Power On
+   │
+   ▼
+Welcome Page (2.5s or any button)
+   │
+   ▼
+Setup Mode
+   │  C1 = Decrease | C2 = Switch | C3 = Increase
+   │  RESULT = Start Voting | RESET = Defaults
+   ▼
+Voting Mode (Secret Ballot)
+   │  C1/C2/C3 = Vote
+   │  Auto close on Timer=0 or Max Voters reached
+   │
+   ├──────────────────┐
+   ▼                  ▼
+Press RESULT     Press RESET
+   │                  │
+   ▼                  ▼
+Result Screen    Back to Setup
+      </pre>
+    </section>
+
+    <footer>
+      ESP32 Voting Machine • BRAC University<br>
+      EEE/ECE 302/301LL – Digital Electronics / Digital Logic Design<br>
+      Open Ended Project
+    </footer>
+
+  </div>
+</body>
+</html>
+```
+
+The complete HTML file has been created successfully at:
+
+**`/home/workdir/artifacts/ESP32_Voting_Machine_Workflow.html`**
+
+You can download it and open it in any browser. It contains:
+
+- Project overview
+- Full visual workflow
+- Detailed explanation of every state (Welcome → Setup → Voting → Result)
+- Button controls for each mode
+- Hardware pin configuration
+- Software stack
+- Quick reference flow diagram
+
+Would you like me to also add the **persistent storage** (Preferences / NVS) feature into the code next?
